@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Counter — Aust</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0a0b'/%3E%3Ctext x='16' y='23' font-family='Arial Black,sans-serif' font-size='20' font-weight='900' fill='%23c8f04a' text-anchor='middle'%3E#%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0b; --bg2: #111113; --bg3: #18181c;
+      --border: rgba(255,255,255,0.07); --border-hover: rgba(255,255,255,0.14);
+      --text: #f0ede8; --text-muted: #6b6b72; --text-mid: #9a9aa3;
+      --accent: #c8f04a; --red: #ff5c5c;
+      --font-display: 'Syne', sans-serif; --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: var(--font-display); min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem; gap: 0;
+      user-select: none;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; opacity: 0.4;
+    }
+
+    .back {
+      position: fixed; top: 1.5rem; left: 1.5rem;
+      font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted);
+      text-decoration: none; transition: color 0.2s; z-index: 10;
+    }
+    .back:hover { color: var(--accent); }
+
+    .counter-wrap {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; gap: 2.5rem;
+    }
+
+    .label {
+      font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);
+      letter-spacing: 0.15em; text-transform: uppercase;
+    }
+
+    .count {
+      font-size: clamp(5rem, 20vw, 12rem);
+      font-weight: 800; letter-spacing: -0.04em; line-height: 1;
+      color: var(--accent); transition: transform 0.08s ease, color 0.2s;
+      cursor: default; font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 60px rgba(200,240,74,0.15);
+    }
+
+    .count.negative { color: var(--red); text-shadow: 0 0 60px rgba(255,92,92,0.15); }
+    .count.bump { transform: scale(1.04); }
+
+    .btn-row {
+      display: flex; align-items: center; gap: 1rem;
+    }
+
+    .btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 64px; height: 64px; border-radius: 50%;
+      font-size: 1.75rem; font-weight: 700; cursor: pointer;
+      border: none; transition: all 0.15s; flex-shrink: 0;
+    }
+
+    .btn-dec {
+      background: var(--bg2); color: var(--red);
+      border: 2px solid rgba(255,92,92,0.2);
+    }
+    .btn-dec:hover { background: rgba(255,92,92,0.1); border-color: var(--red); transform: scale(1.08); }
+    .btn-dec:active { transform: scale(0.96); }
+
+    .btn-inc {
+      width: 88px; height: 88px; font-size: 2.5rem;
+      background: var(--accent); color: #0a0a0b;
+      border: 2px solid var(--accent);
+    }
+    .btn-inc:hover { transform: scale(1.06); background: #d4f55a; }
+    .btn-inc:active { transform: scale(0.96); }
+
+    .btn-reset {
+      background: var(--bg2); color: var(--text-muted);
+      border: 2px solid var(--border-hover); font-size: 1rem;
+      letter-spacing: 0; font-family: var(--font-mono); font-size: 0.72rem;
+      width: auto; height: auto; border-radius: 100px;
+      padding: 0.5rem 1.2rem; letter-spacing: 0.06em;
+    }
+    .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+
+    .step-row {
+      display: flex; align-items: center; gap: 0.75rem;
+      font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);
+    }
+
+    .step-btn {
+      background: var(--bg2); border: 1px solid var(--border-hover);
+      color: var(--text-muted); padding: 0.3rem 0.7rem;
+      border-radius: 3px; cursor: pointer; font-family: var(--font-mono);
+      font-size: 0.72rem; transition: all 0.15s;
+    }
+    .step-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .step-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(200,240,74,0.08); }
+
+    .history {
+      font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);
+      text-align: center; line-height: 1.8; min-height: 1.5rem;
+    }
+
+    .hint {
+      position: fixed; bottom: 1.5rem;
+      font-family: var(--font-mono); font-size: 0.68rem; color: #333336;
+      letter-spacing: 0.06em;
+    }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .counter-wrap { animation: fadeUp 0.5s ease forwards; }
+  </style>
+</head>
+<body>
+
+<a href="/" class="back">← thatonedudeaust.com</a>
+
+<div class="counter-wrap">
+  <div class="label">Counter</div>
+  <div class="count" id="count">0</div>
+
+  <div class="btn-row">
+    <button class="btn btn-dec" onclick="decrement()" title="Decrease">−</button>
+    <button class="btn btn-inc" onclick="increment()" title="Increase">+</button>
+  </div>
+
+  <div class="step-row">
+    <span>Step:</span>
+    <button class="step-btn active" onclick="setStep(1, this)">1</button>
+    <button class="step-btn" onclick="setStep(5, this)">5</button>
+    <button class="step-btn" onclick="setStep(10, this)">10</button>
+    <button class="step-btn" onclick="setStep(100, this)">100</button>
+    <button class="btn-reset" onclick="resetCounter()">Reset</button>
+  </div>
+
+  <div class="history" id="history"></div>
+</div>
+
+<div class="hint">spacebar to increment · backspace to decrement · R to reset</div>
+
+<script>
+  var count = 0;
+  var step = 1;
+  var history = [];
+
+  function updateDisplay() {
+    var el = document.getElementById('count');
+    el.textContent = count.toLocaleString();
+    el.classList.toggle('negative', count < 0);
+    el.classList.remove('bump');
+    void el.offsetWidth;
+    el.classList.add('bump');
+    setTimeout(function() { el.classList.remove('bump'); }, 80);
+  }
+
+  function addHistory(action) {
+    history.unshift(action);
+    if (history.length > 3) history.pop();
+    document.getElementById('history').textContent = history.join('  ·  ');
+  }
+
+  function increment() {
+    count += step;
+    addHistory('+' + step + ' → ' + count.toLocaleString());
+    updateDisplay();
+  }
+
+  function decrement() {
+    count -= step;
+    addHistory('-' + step + ' → ' + count.toLocaleString());
+    updateDisplay();
+  }
+
+  function resetCounter() {
+    count = 0;
+    history = [];
+    document.getElementById('history').textContent = '';
+    updateDisplay();
+  }
+
+  function setStep(s, btn) {
+    step = s;
+    document.querySelectorAll('.step-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space') { e.preventDefault(); increment(); }
+    if (e.code === 'Backspace') { e.preventDefault(); decrement(); }
+    if (e.code === 'KeyR') resetCounter();
+    if (e.code === 'Digit1') setStep(1, document.querySelectorAll('.step-btn')[0]);
+    if (e.code === 'Digit5') setStep(5, document.querySelectorAll('.step-btn')[1]);
+  });
+</script>
+
+</body>
+</html>
